@@ -15,7 +15,8 @@ const mainWindow = new WebGLCanvas(WIDTH, HEIGHT);
 const program = new Program(mainWindow.gl, vertexShader, fragmentShader);
 
 const video = document.createElement("video");
-video.src = "/sphere.mp4";
+video.src = "https://waynechoidev.github.io/earth-animation/sphere.mp4";
+video.crossOrigin = "anonymous";
 
 const texture = new Texture(mainWindow.gl);
 
