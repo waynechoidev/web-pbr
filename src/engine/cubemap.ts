@@ -14,6 +14,7 @@ export default class Cubemap {
       img.onload = () => resolve(img);
       img.onerror = reject;
       img.src = imgSrc;
+      img.crossOrigin = "anonymous";
     });
   }
 

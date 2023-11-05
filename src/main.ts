@@ -51,24 +51,47 @@ const u_view_skybox = mainWindow.gl.getUniformLocation(
 // Interactions
 let isDragging = false;
 let initialX: number, initialY: number;
-document.addEventListener("mousedown", (e) => {
+
+const isMobile =
+  /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+    navigator.userAgent
+  );
+
+const startEvent = isMobile ? "touchstart" : "mousedown";
+const moveEvent = isMobile ? "touchmove" : "mousemove";
+const endEvent = isMobile ? "touchend" : "mouseup";
+
+document.addEventListener(startEvent, (e) => {
   isDragging = true;
-  initialX = e.clientX;
-  initialY = e.clientY;
+  initialX = isMobile
+    ? (e as TouchEvent).touches[0].clientX
+    : (e as MouseEvent).clientX;
+  initialY = isMobile
+    ? (e as TouchEvent).touches[0].clientY
+    : (e as MouseEvent).clientY;
 });
-document.addEventListener("mousemove", (e) => {
+
+document.addEventListener(moveEvent, (e) => {
   if (isDragging) {
-    const dx = e.clientX - initialX;
-    const dy = e.clientY - initialY;
+    const currentX = isMobile
+      ? (e as TouchEvent).touches[0].clientX
+      : (e as MouseEvent).clientX;
+    const currentY = isMobile
+      ? (e as TouchEvent).touches[0].clientY
+      : (e as MouseEvent).clientY;
+
+    const dx = currentX - initialX;
+    const dy = currentY - initialY;
 
     viewRotateX += dy / 10;
     viewRotateY += dx / 10;
 
-    initialX = e.clientX;
-    initialY = e.clientY;
+    initialX = currentX;
+    initialY = currentY;
   }
 });
-document.addEventListener("mouseup", () => {
+
+document.addEventListener(endEvent, () => {
   isDragging = false;
 });
 
