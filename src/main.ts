@@ -118,6 +118,7 @@ video.addEventListener("loadedmetadata", () => {
   video.currentTime = 0.1;
   texture.initialise(video);
 });
+video.load();
 video.addEventListener("ended", () => {
   video.currentTime = 0.1;
   video.play();
