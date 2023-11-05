@@ -8,35 +8,18 @@ export default class Cubemap {
     this._textureID = gl.createTexture();
   }
 
-  private async loadImageAsync(imgSrc: string): Promise<HTMLImageElement> {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => resolve(img);
-      img.onerror = reject;
-      img.src = imgSrc;
-      img.crossOrigin = "anonymous";
-    });
-  }
-
-  public async initialise(imgSrcs: string[]) {
+  public async initialise(imgs: HTMLImageElement[]) {
     this._gl.bindTexture(this._gl.TEXTURE_CUBE_MAP, this._textureID);
 
     for (let i = 0; i < 6; i++) {
-      try {
-        const img = await this.loadImageAsync(imgSrcs[i]);
-        this._images[i] = img;
-
-        this._gl.texImage2D(
-          this._gl.TEXTURE_CUBE_MAP_POSITIVE_X + i,
-          0,
-          this._gl.RGB,
-          this._gl.RGB,
-          this._gl.UNSIGNED_BYTE,
-          img
-        );
-      } catch (error) {
-        console.error("Failed to load image:", imgSrcs[i]);
-      }
+      this._gl.texImage2D(
+        this._gl.TEXTURE_CUBE_MAP_POSITIVE_X + i,
+        0,
+        this._gl.RGB,
+        this._gl.RGB,
+        this._gl.UNSIGNED_BYTE,
+        imgs[i]
+      );
     }
 
     this._gl.texParameteri(

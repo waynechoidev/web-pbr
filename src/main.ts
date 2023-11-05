@@ -53,6 +53,22 @@ const u_view_skybox = mainWindow.gl.getUniformLocation(
 );
 
 // Interactions
+const playButton = document.getElementById("play") as HTMLButtonElement;
+playButton?.addEventListener("click", () => {
+  video.play();
+  playButton.hidden = true;
+});
+
+const loadedResources = {
+  cubemapImages: false,
+  videoLoaded: false,
+};
+function updateLoadingStatus() {
+  if (loadedResources.cubemapImages && loadedResources.videoLoaded) {
+    document.getElementById("loader")!.style.display = "none";
+    playButton.hidden = false;
+  }
+}
 let isDragging = false;
 let initialX: number, initialY: number;
 
@@ -101,22 +117,16 @@ document.addEventListener(endEvent, () => {
   isDragging = false;
 });
 
-const playButton = document.getElementById("play") as HTMLButtonElement;
-playButton?.addEventListener("click", () => {
-  video.play();
-  playButton.hidden = true;
-});
-
 // Textures
 const video = document.createElement("video");
 video.src = "https://waynechoidev.github.io/earth-animation/sphere.mp4";
 video.crossOrigin = "anonymous";
-
 const texture = new Texture(mainWindow.gl);
-
 video.addEventListener("loadedmetadata", () => {
   video.currentTime = 0.1;
   texture.initialise(video);
+  loadedResources.videoLoaded = true;
+  updateLoadingStatus();
 });
 video.load();
 video.addEventListener("ended", () => {
@@ -128,14 +138,41 @@ video.addEventListener("ended", () => {
 const skybox = new Skybox(mainWindow.gl, 20);
 skybox.initialise();
 const skyboxTexture = new Cubemap(mainWindow.gl);
-skyboxTexture.initialise([
+const cubemapSources = [
   "https://waynechoidev.github.io/earth-animation/cubemap/px.png",
   "https://waynechoidev.github.io/earth-animation/cubemap/nx.png",
   "https://waynechoidev.github.io/earth-animation/cubemap/py.png",
   "https://waynechoidev.github.io/earth-animation/cubemap/ny.png",
   "https://waynechoidev.github.io/earth-animation/cubemap/pz.png",
   "https://waynechoidev.github.io/earth-animation/cubemap/nz.png",
-]);
+];
+const loadCubemapImages = async () => {
+  const loadImagePromises = cubemapSources.map((src) => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        resolve(img);
+        loadedResources.cubemapImages = true;
+        updateLoadingStatus();
+      };
+      img.onerror = () => {
+        reject(new Error("Image loading failed"));
+        loadedResources.cubemapImages = true;
+        updateLoadingStatus();
+      };
+      img.src = src;
+      img.crossOrigin = "anonymous";
+    });
+  });
+
+  try {
+    const cubemapImages = await Promise.all(loadImagePromises);
+    skyboxTexture.initialise(cubemapImages as HTMLImageElement[]);
+  } catch (error) {
+    console.error("Error loading cubemap images:", error);
+  }
+};
+loadCubemapImages();
 
 // Model
 const sphere = new Sphere(mainWindow.gl, WIDTH >= 500 ? 0.6 : 0.4);
