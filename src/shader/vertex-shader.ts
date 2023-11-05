@@ -10,9 +10,13 @@ uniform mat4 projection;
 uniform mat4 view;
 
 out vec2 texCoord;
+out vec3 posWorld;
+out vec3 normalWorld;
 
 void main () {
     gl_Position = projection * view * model * vec4(pos, 1.0);
     texCoord = tex;
+    posWorld = (model * vec4(pos, 1.0)).xyz;
+    normalWorld = normalize(mat3(transpose(inverse(model))) * norm);
 }
 `;

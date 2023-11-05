@@ -33,6 +33,10 @@ const program = new Program(mainWindow.gl, vertexShader, fragmentShader);
 const u_model = mainWindow.gl.getUniformLocation(program.id, "model");
 const u_projection = mainWindow.gl.getUniformLocation(program.id, "projection");
 const u_view = mainWindow.gl.getUniformLocation(program.id, "view");
+const u_view_position = mainWindow.gl.getUniformLocation(
+  program.id,
+  "viewPosition"
+);
 
 const skyboxProgram = new Program(
   mainWindow.gl,
@@ -169,6 +173,7 @@ function render(now: number) {
   mainWindow.gl.uniformMatrix4fv(u_model, false, model);
   mainWindow.gl.uniformMatrix4fv(u_view, false, view);
   mainWindow.gl.uniformMatrix4fv(u_projection, false, projection);
+  mainWindow.gl.uniform3f(u_view_position, eye[0], eye[1], eye[2]);
 
   if (video.readyState === video.HAVE_ENOUGH_DATA) {
     texture.update(video);
