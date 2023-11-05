@@ -19,4 +19,28 @@ body {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+
+  border: 0;
+  background: transparent;
+  box-sizing: border-box;
+  width: 0;
+  height: 0;
+  margin-left: 15px;
+
+  border-color: transparent transparent transparent #f53333;
+  cursor: pointer;
+
+  border-style: solid;
+  border-width: 70px 0 70px 120px;
+
+  &:hover {
+    border-color: transparent transparent transparent #cc1818;
+  }
+}
+
+@media screen and (max-width: 500px) {
+  #play {
+    border-style: solid;
+    border-width: 50px 0 50px 90px;
+  }
 }
