@@ -1,7 +1,6 @@
 import Program from "./engine/program";
 import WebGLCanvas from "./engine/webgl-canvas";
 import Sphere from "./geometry/sphere";
-import Square from "./geometry/square";
 import Texture from "./engine/texture";
 import { vec3, mat4 } from "./external/glmatrix/index";
 import { toRadian } from "./external/glmatrix/common.js";
@@ -11,8 +10,44 @@ import { vertexShader } from "./shader/vertex-shader";
 const WIDTH = document.documentElement.clientWidth * 0.9;
 const HEIGHT = document.documentElement.clientHeight * 0.9;
 
+let deltaTime = 0;
+let lastTime = 0;
+
+let modelRotateY = 130;
+const modelRotateZ = -23.5;
+const rotateSpeed = 10;
+
+let viewRotateX = 0;
+let viewRotateY = 0;
+const viewStartEye = vec3.fromValues(0, 0, 2.5);
+const viewStartCenter = vec3.fromValues(0, 0, 1.5);
+const viewStartUp = vec3.fromValues(0, 1, 0);
+
 const mainWindow = new WebGLCanvas(WIDTH, HEIGHT);
 const program = new Program(mainWindow.gl, vertexShader, fragmentShader);
+
+let isDragging = false;
+let initialX: number, initialY: number;
+document.addEventListener("mousedown", (e) => {
+  isDragging = true;
+  initialX = e.clientX;
+  initialY = e.clientY;
+});
+document.addEventListener("mousemove", (e) => {
+  if (isDragging) {
+    const dx = e.clientX - initialX;
+    const dy = e.clientY - initialY;
+
+    viewRotateX += dy / 10;
+    viewRotateY += dx / 10;
+
+    initialX = e.clientX;
+    initialY = e.clientY;
+  }
+});
+document.addEventListener("mouseup", () => {
+  isDragging = false;
+});
 
 const video = document.createElement("video");
 video.src = "https://waynechoidev.github.io/earth-animation/sphere.mp4";
@@ -45,13 +80,6 @@ const u_view = mainWindow.gl.getUniformLocation(program.id, "view");
 const projection = mat4.create();
 mat4.perspective(projection, toRadian(45), WIDTH / HEIGHT, 0.1, 100);
 
-let deltaTime = 0;
-let lastTime = 0;
-
-let y = 130;
-let z = -23.5;
-const speed = 10;
-
 function render(now: number) {
   mainWindow.clear();
 
@@ -59,23 +87,31 @@ function render(now: number) {
   lastTime = now;
 
   if (!video.paused) {
-    if (y >= 360) y = 0;
-    else y += deltaTime * speed;
+    if (modelRotateY >= 360) modelRotateY = 0;
+    else modelRotateY += deltaTime * rotateSpeed;
   }
+
+  // if (!video.paused) {
+  //   viewRotateY += deltaTime * rotateSpeed;
+  // }
 
   program.use();
 
   const model = mat4.create();
-  mat4.rotateZ(model, model, toRadian(z));
-  mat4.rotateY(model, model, toRadian(y));
+  mat4.rotateZ(model, model, toRadian(modelRotateZ));
+  mat4.rotateY(model, model, toRadian(modelRotateY));
 
   const view = mat4.create();
-  mat4.lookAt(
-    view,
-    vec3.fromValues(0, 0, 2.5),
-    vec3.fromValues(0, 0, 1.5),
-    vec3.fromValues(0, 1, 0)
-  );
+  const viewRotationMatrix = mat4.create();
+  mat4.rotateX(viewRotationMatrix, viewRotationMatrix, toRadian(viewRotateX));
+  mat4.rotateY(viewRotationMatrix, viewRotationMatrix, toRadian(viewRotateY));
+  const eye = vec3.create();
+  const center = vec3.create();
+  const up = vec3.create();
+  vec3.transformMat4(eye, viewStartEye, viewRotationMatrix);
+  vec3.transformMat4(center, viewStartCenter, viewRotationMatrix);
+  vec3.transformMat4(up, viewStartUp, viewRotationMatrix);
+  mat4.lookAt(view, eye, center, up);
 
   mainWindow.gl.uniformMatrix4fv(u_model, false, model);
   mainWindow.gl.uniformMatrix4fv(u_view, false, view);
