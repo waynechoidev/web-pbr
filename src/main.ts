@@ -92,6 +92,8 @@ document.addEventListener(moveEvent, (e) => {
 
     initialX = currentX;
     initialY = currentY;
+
+    e.preventDefault();
   }
 });
 
