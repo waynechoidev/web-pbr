@@ -6,6 +6,10 @@ import { vec3, mat4 } from "./external/glmatrix/index";
 import { toRadian } from "./external/glmatrix/common.js";
 import { fragmentShader } from "./shader/fragment-shader";
 import { vertexShader } from "./shader/vertex-shader";
+import Cubemap from "./engine/cubemap";
+import Skybox from "./geometry/skybox";
+import { skyboxVertexShader } from "./shader/skybox-vertex-shader";
+import { skyboxFragmentShader } from "./shader/skybox-fragment-shader";
 
 const WIDTH = document.documentElement.clientWidth * 0.9;
 const HEIGHT = document.documentElement.clientHeight * 0.9;
@@ -24,8 +28,27 @@ const viewStartCenter = vec3.fromValues(0, 0, 1.5);
 const viewStartUp = vec3.fromValues(0, 1, 0);
 
 const mainWindow = new WebGLCanvas(WIDTH, HEIGHT);
-const program = new Program(mainWindow.gl, vertexShader, fragmentShader);
 
+const program = new Program(mainWindow.gl, vertexShader, fragmentShader);
+const u_model = mainWindow.gl.getUniformLocation(program.id, "model");
+const u_projection = mainWindow.gl.getUniformLocation(program.id, "projection");
+const u_view = mainWindow.gl.getUniformLocation(program.id, "view");
+
+const skyboxProgram = new Program(
+  mainWindow.gl,
+  skyboxVertexShader,
+  skyboxFragmentShader
+);
+const u_projection_skybox = mainWindow.gl.getUniformLocation(
+  skyboxProgram.id,
+  "projection"
+);
+const u_view_skybox = mainWindow.gl.getUniformLocation(
+  skyboxProgram.id,
+  "view"
+);
+
+// Interactions
 let isDragging = false;
 let initialX: number, initialY: number;
 document.addEventListener("mousedown", (e) => {
@@ -49,6 +72,13 @@ document.addEventListener("mouseup", () => {
   isDragging = false;
 });
 
+const playButton = document.getElementById("play") as HTMLButtonElement;
+playButton?.addEventListener("click", () => {
+  video.play();
+  playButton.hidden = true;
+});
+
+// Textures
 const video = document.createElement("video");
 video.src = "https://waynechoidev.github.io/earth-animation/sphere.mp4";
 video.crossOrigin = "anonymous";
@@ -64,18 +94,22 @@ video.addEventListener("ended", () => {
   video.play();
 });
 
-const playButton = document.getElementById("play") as HTMLButtonElement;
-playButton?.addEventListener("click", () => {
-  video.play();
-  playButton.hidden = true;
-});
+// Cubemap
+const skybox = new Skybox(mainWindow.gl, 20);
+skybox.initialise();
+const skyboxTexture = new Cubemap(mainWindow.gl);
+skyboxTexture.initialise([
+  "/cubemap/px.png",
+  "/cubemap/nx.png",
+  "/cubemap/py.png",
+  "/cubemap/ny.png",
+  "/cubemap/pz.png",
+  "/cubemap/nz.png",
+]);
 
+// Model
 const sphere = new Sphere(mainWindow.gl, WIDTH >= 500 ? 0.6 : 0.4);
 sphere.initialise();
-
-const u_model = mainWindow.gl.getUniformLocation(program.id, "model");
-const u_projection = mainWindow.gl.getUniformLocation(program.id, "projection");
-const u_view = mainWindow.gl.getUniformLocation(program.id, "view");
 
 const projection = mat4.create();
 mat4.perspective(projection, toRadian(45), WIDTH / HEIGHT, 0.1, 100);
@@ -91,10 +125,6 @@ function render(now: number) {
     else modelRotateY += deltaTime * rotateSpeed;
   }
 
-  // if (!video.paused) {
-  //   viewRotateY += deltaTime * rotateSpeed;
-  // }
-
   program.use();
 
   const model = mat4.create();
@@ -103,8 +133,8 @@ function render(now: number) {
 
   const view = mat4.create();
   const viewRotationMatrix = mat4.create();
-  mat4.rotateX(viewRotationMatrix, viewRotationMatrix, toRadian(viewRotateX));
   mat4.rotateY(viewRotationMatrix, viewRotationMatrix, toRadian(viewRotateY));
+  mat4.rotateX(viewRotationMatrix, viewRotationMatrix, toRadian(viewRotateX));
   const eye = vec3.create();
   const center = vec3.create();
   const up = vec3.create();
@@ -121,6 +151,12 @@ function render(now: number) {
     texture.update(video);
     sphere.draw();
   }
+
+  skyboxProgram.use();
+  mainWindow.gl.uniformMatrix4fv(u_view_skybox, false, view);
+  mainWindow.gl.uniformMatrix4fv(u_projection_skybox, false, projection);
+  skyboxTexture.use();
+  skybox.draw();
 
   mainWindow.gl.useProgram(null);
   mainWindow.gl.bindTexture(mainWindow.gl.TEXTURE_2D, null);
