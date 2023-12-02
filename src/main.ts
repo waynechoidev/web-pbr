@@ -168,6 +168,7 @@ const loadCubemapImages = async () => {
   try {
     const cubemapImages = await Promise.all(loadImagePromises);
     skyboxTexture.initialise(cubemapImages as HTMLImageElement[]);
+    render(deltaTime);
   } catch (error) {
     console.error("Error loading cubemap images:", error);
   }
