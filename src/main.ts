@@ -132,15 +132,14 @@ const loadVideo = async () => {
     video.addEventListener("loadedmetadata", () => {
       video.currentTime = 0.1;
       texture.initialise(video);
-      loadedResources.videoLoaded = true;
-      updateLoadingStatus();
     });
     video.addEventListener("canplaythrough", () => {
       resolve();
+      loadedResources.videoLoaded = true;
+      updateLoadingStatus();
     });
     video.addEventListener("error", () => {
       reject(new Error("Video loading failed"));
-      loadedResources.videoLoaded = true;
       updateLoadingStatus();
     });
   });
@@ -162,6 +161,8 @@ const loadCubemapImages = async () => {
   const loadImagePromises = cubemapSources.map((src) => {
     return new Promise((resolve, reject) => {
       const img = new Image();
+      img.src = src;
+      img.crossOrigin = "anonymous";
       img.onload = () => {
         resolve(img);
         loadedResources.cubemapImages = true;
@@ -169,11 +170,8 @@ const loadCubemapImages = async () => {
       };
       img.onerror = () => {
         reject(new Error("Image loading failed"));
-        loadedResources.cubemapImages = true;
         updateLoadingStatus();
       };
-      img.src = src;
-      img.crossOrigin = "anonymous";
     });
   });
 
