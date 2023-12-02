@@ -133,9 +133,9 @@ const loadVideo = async () => {
       video.currentTime = 0.1;
       texture.initialise(video);
       loadedResources.videoLoaded = true;
-      video.load();
       updateLoadingStatus();
     });
+    video.load();
     video.addEventListener("error", () => {
       reject(new Error("Video loading failed"));
       loadedResources.videoLoaded = true;
