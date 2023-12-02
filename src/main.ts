@@ -121,18 +121,23 @@ document.addEventListener(endEvent, () => {
 const video = document.createElement("video");
 video.src = "https://waynechoidev.github.io/earth-animation/sphere.mp4";
 video.crossOrigin = "anonymous";
+video.addEventListener("ended", () => {
+  video.currentTime = 0.1;
+  video.play();
+});
 const texture = new Texture(mainWindow.gl);
 const loadVideo = async () => {
-  video.addEventListener("loadedmetadata", () => {
-    video.currentTime = 0.1;
-    texture.initialise(video);
-    loadedResources.videoLoaded = true;
-    updateLoadingStatus();
-  });
-  video.load();
-  video.addEventListener("ended", () => {
-    video.currentTime = 0.1;
-    video.play();
+  return new Promise<void>((resolve, reject) => {
+    video.addEventListener("loadedmetadata", () => {
+      resolve();
+      video.currentTime = 0.1;
+      texture.initialise(video);
+      loadedResources.videoLoaded = true;
+      updateLoadingStatus();
+    });
+    video.addEventListener("error", (error) => {
+      reject(error);
+    });
   });
 };
 
@@ -235,6 +240,7 @@ function render(now: number) {
 const start = async () => {
   await loadCubemapImages();
   await loadVideo();
+  video.load();
   render(deltaTime);
 };
 
