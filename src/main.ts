@@ -122,17 +122,19 @@ const video = document.createElement("video");
 video.src = "https://waynechoidev.github.io/earth-animation/sphere.mp4";
 video.crossOrigin = "anonymous";
 const texture = new Texture(mainWindow.gl);
-video.addEventListener("loadedmetadata", () => {
-  video.currentTime = 0.1;
-  texture.initialise(video);
-  loadedResources.videoLoaded = true;
-  updateLoadingStatus();
-});
-video.load();
-video.addEventListener("ended", () => {
-  video.currentTime = 0.1;
-  video.play();
-});
+const loadVideo = async () => {
+  video.addEventListener("loadedmetadata", () => {
+    video.currentTime = 0.1;
+    texture.initialise(video);
+    loadedResources.videoLoaded = true;
+    updateLoadingStatus();
+  });
+  video.load();
+  video.addEventListener("ended", () => {
+    video.currentTime = 0.1;
+    video.play();
+  });
+};
 
 // Cubemap
 const skybox = new Skybox(mainWindow.gl, 20);
@@ -168,12 +170,10 @@ const loadCubemapImages = async () => {
   try {
     const cubemapImages = await Promise.all(loadImagePromises);
     skyboxTexture.initialise(cubemapImages as HTMLImageElement[]);
-    render(deltaTime);
   } catch (error) {
     console.error("Error loading cubemap images:", error);
   }
 };
-loadCubemapImages();
 
 // Model
 const sphere = new Sphere(mainWindow.gl, WIDTH >= 500 ? 0.6 : 0.4);
@@ -231,4 +231,11 @@ function render(now: number) {
   mainWindow.gl.bindTexture(mainWindow.gl.TEXTURE_2D, null);
   window.requestAnimationFrame(render);
 }
-render(deltaTime);
+
+const start = async () => {
+  await loadCubemapImages();
+  await loadVideo();
+  render(deltaTime);
+};
+
+start();
