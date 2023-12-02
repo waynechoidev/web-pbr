@@ -125,17 +125,19 @@ video.addEventListener("ended", () => {
   video.currentTime = 0.1;
   video.play();
 });
+video.load();
 const texture = new Texture(mainWindow.gl);
 const loadVideo = async () => {
   return new Promise<void>((resolve, reject) => {
     video.addEventListener("loadedmetadata", () => {
-      resolve();
       video.currentTime = 0.1;
       texture.initialise(video);
       loadedResources.videoLoaded = true;
       updateLoadingStatus();
     });
-    video.load();
+    video.addEventListener("canplaythrough", () => {
+      resolve();
+    });
     video.addEventListener("error", () => {
       reject(new Error("Video loading failed"));
       loadedResources.videoLoaded = true;
