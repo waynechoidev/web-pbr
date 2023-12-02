@@ -139,12 +139,12 @@ const skybox = new Skybox(mainWindow.gl, 20);
 skybox.initialise();
 const skyboxTexture = new Cubemap(mainWindow.gl);
 const cubemapSources = [
-  "https://waynechoidev.github.io/earth-animation/cubemap/px.png",
-  "https://waynechoidev.github.io/earth-animation/cubemap/nx.png",
-  "https://waynechoidev.github.io/earth-animation/cubemap/py.png",
-  "https://waynechoidev.github.io/earth-animation/cubemap/ny.png",
-  "https://waynechoidev.github.io/earth-animation/cubemap/pz.png",
-  "https://waynechoidev.github.io/earth-animation/cubemap/nz.png",
+  "https://waynechoidev.github.io/earth-animation/cubemap/px.jpg",
+  "https://waynechoidev.github.io/earth-animation/cubemap/nx.jpg",
+  "https://waynechoidev.github.io/earth-animation/cubemap/py.jpg",
+  "https://waynechoidev.github.io/earth-animation/cubemap/ny.jpg",
+  "https://waynechoidev.github.io/earth-animation/cubemap/pz.jpg",
+  "https://waynechoidev.github.io/earth-animation/cubemap/nz.jpg",
 ];
 const loadCubemapImages = async () => {
   const loadImagePromises = cubemapSources.map((src) => {
