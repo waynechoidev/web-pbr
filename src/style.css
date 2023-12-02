@@ -78,4 +78,8 @@ body {
     border-style: solid;
     border-width: 50px 0 50px 90px;
   }
+
+  #loader {
+    left: 40%;
+  }
 }
