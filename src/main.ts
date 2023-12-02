@@ -133,10 +133,13 @@ const loadVideo = async () => {
       video.currentTime = 0.1;
       texture.initialise(video);
       loadedResources.videoLoaded = true;
+      video.load();
       updateLoadingStatus();
     });
-    video.addEventListener("error", (error) => {
-      reject(error);
+    video.addEventListener("error", () => {
+      reject(new Error("Video loading failed"));
+      loadedResources.videoLoaded = true;
+      updateLoadingStatus();
     });
   });
 };
@@ -240,7 +243,6 @@ function render(now: number) {
 const start = async () => {
   await loadCubemapImages();
   await loadVideo();
-  video.load();
   render(deltaTime);
 };
 
