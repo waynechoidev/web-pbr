@@ -52,13 +52,6 @@ const u_view_skybox = mainWindow.gl.getUniformLocation(
   "view"
 );
 
-// Interactions
-const playButton = document.getElementById("play") as HTMLButtonElement;
-playButton?.addEventListener("click", () => {
-  video.play();
-  playButton.hidden = true;
-});
-
 const loadedResources = {
   cubemapImages: false,
   videoLoaded: false,
@@ -66,7 +59,6 @@ const loadedResources = {
 function updateLoadingStatus() {
   if (loadedResources.cubemapImages && loadedResources.videoLoaded) {
     document.getElementById("loader")!.style.display = "none";
-    playButton.hidden = false;
   }
 }
 let isDragging = false;
@@ -118,7 +110,9 @@ document.addEventListener(endEvent, () => {
 });
 
 // Textures
+const texture = new Texture(mainWindow.gl);
 const video = document.createElement("video");
+video.muted = true;
 video.src = "https://waynechoidev.github.io/earth-animation/sphere.mp4";
 video.crossOrigin = "anonymous";
 video.addEventListener("ended", () => {
@@ -126,24 +120,13 @@ video.addEventListener("ended", () => {
   video.play();
 });
 video.load();
-const texture = new Texture(mainWindow.gl);
-const loadVideo = async () => {
-  return new Promise<void>((resolve, reject) => {
-    video.addEventListener("loadedmetadata", () => {
-      video.currentTime = 0.1;
-      texture.initialise(video);
-    });
-    video.addEventListener("canplaythrough", () => {
-      resolve();
-      loadedResources.videoLoaded = true;
-      updateLoadingStatus();
-    });
-    video.addEventListener("error", () => {
-      reject(new Error("Video loading failed"));
-      updateLoadingStatus();
-    });
-  });
-};
+video.addEventListener("loadedmetadata", () => {
+  video.currentTime = 0.1;
+  loadedResources.videoLoaded = true;
+  updateLoadingStatus();
+  video.play();
+  texture.initialise(video);
+});
 
 // Cubemap
 const skybox = new Skybox(mainWindow.gl, 20);
@@ -242,7 +225,6 @@ function render(now: number) {
 
 const start = async () => {
   await loadCubemapImages();
-  await loadVideo();
   render(deltaTime);
 };
 
