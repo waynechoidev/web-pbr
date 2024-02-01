@@ -122,10 +122,12 @@ video.addEventListener("ended", () => {
 video.load();
 video.addEventListener("loadedmetadata", () => {
   video.currentTime = 0.1;
-  loadedResources.videoLoaded = true;
-  updateLoadingStatus();
   video.play();
   texture.initialise(video);
+});
+video.addEventListener("canplaythrough", () => {
+  loadedResources.videoLoaded = true;
+  updateLoadingStatus();
 });
 
 // Cubemap
