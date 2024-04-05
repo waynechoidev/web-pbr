@@ -108,13 +108,13 @@ document.addEventListener(endEvent, () => {
 
 // Textures
 const textureSrcs = [
-  "/pbr/antique-grate1-height.jpg",
-  "/pbr/antique-grate1-albedo.jpg",
-  "/pbr/antique-grate1-normal-dx.jpg",
-  "/pbr/antique-grate1-metallic.jpg",
-  "/pbr/antique-grate1-roughness.jpg",
-  "/pbr/antique-grate1-ao.jpg",
-  "/cubemap/air_museum_playground_brdf.jpg",
+  "https://waynechoidev.github.io/web-pbr/pbr/antique-grate1-height.jpg",
+  "https://waynechoidev.github.io/web-pbr/pbr/antique-grate1-albedo.jpg",
+  "https://waynechoidev.github.io/web-pbr/pbr/antique-grate1-normal-dx.jpg",
+  "https://waynechoidev.github.io/web-pbr/pbr/antique-grate1-metallic.jpg",
+  "https://waynechoidev.github.io/web-pbr/pbr/antique-grate1-roughness.jpg",
+  "https://waynechoidev.github.io/web-pbr/pbr/antique-grate1-ao.jpg",
+  "https://waynechoidev.github.io/web-pbr/cubemap/air_museum_playground_brdf.jpg",
 ];
 const heightMap = new Texture(gl, "heightMap");
 const albedoMap = new Texture(gl, "albedoMap");
@@ -160,12 +160,12 @@ const loadTextureImages = async () => {
 // Env Cubemaps
 const envCubemap = new Cubemap(gl, "envCubemap");
 const envCubemapSrcs = [
-  "/cubemap/air_museum_playground_env_px.jpg",
-  "/cubemap/air_museum_playground_env_nx.jpg",
-  "/cubemap/air_museum_playground_env_py.jpg",
-  "/cubemap/air_museum_playground_env_ny.jpg",
-  "/cubemap/air_museum_playground_env_pz.jpg",
-  "/cubemap/air_museum_playground_env_nz.jpg",
+  "https://waynechoidev.github.io/web-pbr/cubemap/air_museum_playground_env_px.jpg",
+  "https://waynechoidev.github.io/web-pbr/cubemap/air_museum_playground_env_nx.jpg",
+  "https://waynechoidev.github.io/web-pbr/cubemap/air_museum_playground_env_py.jpg",
+  "https://waynechoidev.github.io/web-pbr/cubemap/air_museum_playground_env_ny.jpg",
+  "https://waynechoidev.github.io/web-pbr/cubemap/air_museum_playground_env_pz.jpg",
+  "https://waynechoidev.github.io/web-pbr/cubemap/air_museum_playground_env_nz.jpg",
 ];
 const loadEnvCubemapImages = async () => {
   const loadImagePromises = envCubemapSrcs.map((src) => {
@@ -197,12 +197,12 @@ const loadEnvCubemapImages = async () => {
 // Irradiance Cubemaps
 const irradianceCubemap = new Cubemap(gl, "irradianceCubemap");
 const irradianceCubemapSrcs = [
-  "/cubemap/air_museum_playground_irradiance_px.jpg",
-  "/cubemap/air_museum_playground_irradiance_nx.jpg",
-  "/cubemap/air_museum_playground_irradiance_py.jpg",
-  "/cubemap/air_museum_playground_irradiance_ny.jpg",
-  "/cubemap/air_museum_playground_irradiance_pz.jpg",
-  "/cubemap/air_museum_playground_irradiance_nz.jpg",
+  "https://waynechoidev.github.io/web-pbr/cubemap/air_museum_playground_irradiance_px.jpg",
+  "https://waynechoidev.github.io/web-pbr/cubemap/air_museum_playground_irradiance_nx.jpg",
+  "https://waynechoidev.github.io/web-pbr/cubemap/air_museum_playground_irradiance_py.jpg",
+  "https://waynechoidev.github.io/web-pbr/cubemap/air_museum_playground_irradiance_ny.jpg",
+  "https://waynechoidev.github.io/web-pbr/cubemap/air_museum_playground_irradiance_pz.jpg",
+  "https://waynechoidev.github.io/web-pbr/cubemap/air_museum_playground_irradiance_nz.jpg",
 ];
 const loadIrradianceCubemapImages = async () => {
   const loadImagePromises = irradianceCubemapSrcs.map((src) => {
