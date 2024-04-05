@@ -95,9 +95,10 @@ void main()
     vec3 F0 = vec3(0.04);
     F0 = mix(F0, albedo, metallic);
 
-    vec3 L = normalize(lightPos - posWorld);
+    // use camPos instead of lightPos
+    vec3 L = normalize(camPos - posWorld);
     vec3 H = normalize(V + L);
-    float distance = length(lightPos - posWorld);
+    float distance = length(camPos - posWorld);
     float attenuation = 1.0 / (distance * distance);
     vec3 radiance = lightRadiances * attenuation;
 
