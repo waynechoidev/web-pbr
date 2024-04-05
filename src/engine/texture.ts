@@ -1,10 +1,12 @@
 export default class Texture {
   private _gl: WebGL2RenderingContext;
   private _textureID: WebGLTexture | null;
+  private _name: string;
 
-  constructor(gl: WebGL2RenderingContext) {
+  constructor(gl: WebGL2RenderingContext, name: string) {
     this._gl = gl;
     this._textureID = gl.createTexture();
+    this._name = name;
   }
 
   public initialise(image: TexImageSource) {
@@ -40,20 +42,11 @@ export default class Texture {
     this._gl.bindTexture(this._gl.TEXTURE_2D, null);
   }
 
-  public use() {
-    this._gl.activeTexture(this._gl.TEXTURE0);
+  public use(program: WebGLProgram, index: number) {
+    this._gl.activeTexture(this._gl.TEXTURE0 + index);
     this._gl.bindTexture(this._gl.TEXTURE_2D, this._textureID);
-  }
 
-  public update(image: TexImageSource) {
-    this.use();
-    this._gl.texImage2D(
-      this._gl.TEXTURE_2D,
-      0,
-      this._gl.RGB,
-      this._gl.RGB,
-      this._gl.UNSIGNED_BYTE,
-      image
-    );
+    const uniformLoc = this._gl.getUniformLocation(program, this._name);
+    this._gl.uniform1i(uniformLoc, index);
   }
 }

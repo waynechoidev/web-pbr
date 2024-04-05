@@ -1,5 +1,5 @@
-import { fragmentShader } from "./shader/fragment-shader";
-import { vertexShader } from "./shader/vertex-shader";
+import { fragmentShader } from "./shader/main_frag";
+import { vertexShader } from "./shader/main_vert";
 
 export class CanvasEngine {
   private _vertices?: Float32Array;

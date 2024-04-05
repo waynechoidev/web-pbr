@@ -24,8 +24,8 @@ export default class Mesh {
     this._indexCount = this._indices.length;
     const verticesData: number[] = [];
     for (let i = 0; i < this._vertices.length; i++) {
-      const { position, normal, texCoord } = this._vertices[i];
-      verticesData.push(...position, ...normal, ...texCoord);
+      const { position, normal, tangent, texCoord } = this._vertices[i];
+      verticesData.push(...position, ...normal, ...tangent, ...texCoord);
     }
 
     this._VAO = this._gl.createVertexArray();
@@ -47,12 +47,14 @@ export default class Mesh {
       this._gl.STATIC_DRAW
     );
 
-    this._gl.vertexAttribPointer(0, 3, this._gl.FLOAT, false, 4 * 8, 0);
+    this._gl.vertexAttribPointer(0, 3, this._gl.FLOAT, false, 4 * 11, 0);
     this._gl.enableVertexAttribArray(0);
-    this._gl.vertexAttribPointer(1, 3, this._gl.FLOAT, false, 4 * 8, 4 * 3);
+    this._gl.vertexAttribPointer(1, 3, this._gl.FLOAT, false, 4 * 11, 4 * 3);
     this._gl.enableVertexAttribArray(1);
-    this._gl.vertexAttribPointer(2, 2, this._gl.FLOAT, false, 4 * 8, 4 * 6);
+    this._gl.vertexAttribPointer(2, 3, this._gl.FLOAT, false, 4 * 11, 4 * 6);
     this._gl.enableVertexAttribArray(2);
+    this._gl.vertexAttribPointer(3, 2, this._gl.FLOAT, false, 4 * 11, 4 * 9);
+    this._gl.enableVertexAttribArray(3);
 
     this._gl.bindBuffer(this._gl.ARRAY_BUFFER, null);
     this._gl.bindBuffer(this._gl.ELEMENT_ARRAY_BUFFER, null);

@@ -4,12 +4,12 @@ import Sphere from "./geometry/sphere";
 import Texture from "./engine/texture";
 import { vec3, mat4 } from "./external/glmatrix/index";
 import { toRadian } from "./external/glmatrix/common.js";
-import { fragmentShader } from "./shader/fragment-shader";
-import { vertexShader } from "./shader/vertex-shader";
+import { main_frag } from "./shader/main_frag";
+import { main_vert } from "./shader/main_vert";
 import Cubemap from "./engine/cubemap";
 import Skybox from "./geometry/skybox";
-import { skyboxVertexShader } from "./shader/skybox-vertex-shader";
-import { skyboxFragmentShader } from "./shader/skybox-fragment-shader";
+import { background_vert } from "./shader/background_vert";
+import { background_frag } from "./shader/background_frag";
 
 const WIDTH = document.documentElement.clientWidth * 0.9;
 const HEIGHT = document.documentElement.clientHeight * 0.9;
@@ -19,7 +19,7 @@ let lastTime = 0;
 
 let modelRotateY = 130;
 const modelRotateZ = -23.5;
-const rotateSpeed = 10;
+const lightPos = vec3.fromValues(0, 0, 2);
 
 let viewRotateX = 0;
 let viewRotateY = 0;
@@ -28,36 +28,33 @@ const viewStartCenter = vec3.fromValues(0, 0, 1.5);
 const viewStartUp = vec3.fromValues(0, 1, 0);
 
 const mainWindow = new WebGLCanvas(WIDTH, HEIGHT);
+const gl = mainWindow.gl;
 
-const program = new Program(mainWindow.gl, vertexShader, fragmentShader);
-const u_model = mainWindow.gl.getUniformLocation(program.id, "model");
-const u_projection = mainWindow.gl.getUniformLocation(program.id, "projection");
-const u_view = mainWindow.gl.getUniformLocation(program.id, "view");
-const u_view_position = mainWindow.gl.getUniformLocation(
-  program.id,
-  "viewPosition"
-);
+const mainProgram = new Program(gl, main_vert, main_frag);
+const mainModelLoc = gl.getUniformLocation(mainProgram.id, "model");
+const mainProjectionLoc = gl.getUniformLocation(mainProgram.id, "projection");
+const mainViewLoc = gl.getUniformLocation(mainProgram.id, "view");
+const mainCamPosLoc = gl.getUniformLocation(mainProgram.id, "camPos");
+const mainlightPosLoc = gl.getUniformLocation(mainProgram.id, "lightPos");
 
-const skyboxProgram = new Program(
-  mainWindow.gl,
-  skyboxVertexShader,
-  skyboxFragmentShader
-);
-const u_projection_skybox = mainWindow.gl.getUniformLocation(
-  skyboxProgram.id,
+const backgroundProgram = new Program(gl, background_vert, background_frag);
+const backgroundProjectionLoc = gl.getUniformLocation(
+  backgroundProgram.id,
   "projection"
 );
-const u_view_skybox = mainWindow.gl.getUniformLocation(
-  skyboxProgram.id,
-  "view"
-);
+const backgroundViewLoc = gl.getUniformLocation(backgroundProgram.id, "view");
 
 const loadedResources = {
-  cubemapImages: false,
-  videoLoaded: false,
+  envCubemapImages: false,
+  irradianceCubemapImages: false,
+  textureLoaded: false,
 };
 function updateLoadingStatus() {
-  if (loadedResources.cubemapImages && loadedResources.videoLoaded) {
+  if (
+    loadedResources.envCubemapImages &&
+    loadedResources.irradianceCubemapImages &&
+    loadedResources.textureLoaded
+  ) {
     document.getElementById("loader")!.style.display = "none";
   }
 }
@@ -110,67 +107,135 @@ document.addEventListener(endEvent, () => {
 });
 
 // Textures
-const texture = new Texture(mainWindow.gl);
-const video = document.createElement("video");
-video.muted = true;
-video.src = "https://waynechoidev.github.io/earth-animation/sphere.mp4";
-video.crossOrigin = "anonymous";
-video.addEventListener("ended", () => {
-  video.currentTime = 0.1;
-  video.play();
-});
-video.load();
-video.addEventListener("loadedmetadata", () => {
-  video.currentTime = 0.1;
-  video.play();
-  texture.initialise(video);
-});
-video.addEventListener("canplaythrough", () => {
-  loadedResources.videoLoaded = true;
-  updateLoadingStatus();
-});
-
-// Cubemap
-const skybox = new Skybox(mainWindow.gl, 20);
-skybox.initialise();
-const skyboxTexture = new Cubemap(mainWindow.gl);
-const cubemapSources = [
-  "https://waynechoidev.github.io/earth-animation/cubemap/px.jpg",
-  "https://waynechoidev.github.io/earth-animation/cubemap/nx.jpg",
-  "https://waynechoidev.github.io/earth-animation/cubemap/py.jpg",
-  "https://waynechoidev.github.io/earth-animation/cubemap/ny.jpg",
-  "https://waynechoidev.github.io/earth-animation/cubemap/pz.jpg",
-  "https://waynechoidev.github.io/earth-animation/cubemap/nz.jpg",
+const textureSrcs = [
+  "/pbr/antique-grate1-height.jpg",
+  "/pbr/antique-grate1-albedo.jpg",
+  "/pbr/antique-grate1-normal-dx.jpg",
+  "/pbr/antique-grate1-metallic.jpg",
+  "/pbr/antique-grate1-roughness.jpg",
+  "/pbr/antique-grate1-ao.jpg",
+  "/cubemap/air_museum_playground_brdf.jpg",
 ];
-const loadCubemapImages = async () => {
-  const loadImagePromises = cubemapSources.map((src) => {
+const heightMap = new Texture(gl, "heightMap");
+const albedoMap = new Texture(gl, "albedoMap");
+const normalMap = new Texture(gl, "normalMap");
+const metallicMap = new Texture(gl, "metallicMap");
+const roughnessMap = new Texture(gl, "roughnessMap");
+const aoMap = new Texture(gl, "aoMap");
+const brdfLUT = new Texture(gl, "brdfLUT");
+
+const loadTextureImages = async () => {
+  const loadImagePromises = textureSrcs.map((src) => {
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.src = src;
       img.crossOrigin = "anonymous";
       img.onload = () => {
         resolve(img);
-        loadedResources.cubemapImages = true;
-        updateLoadingStatus();
       };
       img.onerror = () => {
         reject(new Error("Image loading failed"));
-        updateLoadingStatus();
       };
     });
   });
 
   try {
-    const cubemapImages = await Promise.all(loadImagePromises);
-    skyboxTexture.initialise(cubemapImages as HTMLImageElement[]);
+    const textures = (await Promise.all(
+      loadImagePromises
+    )) as HTMLImageElement[];
+    heightMap.initialise(textures[0]);
+    albedoMap.initialise(textures[1]);
+    normalMap.initialise(textures[2]);
+    metallicMap.initialise(textures[3]);
+    roughnessMap.initialise(textures[4]);
+    aoMap.initialise(textures[5]);
+    brdfLUT.initialise(textures[6]);
+    loadedResources.textureLoaded = true;
+    updateLoadingStatus();
   } catch (error) {
     console.error("Error loading cubemap images:", error);
   }
 };
 
-// Model
-const sphere = new Sphere(mainWindow.gl, WIDTH >= 500 ? 0.6 : 0.4);
+// Env Cubemaps
+const envCubemap = new Cubemap(gl, "envCubemap");
+const envCubemapSrcs = [
+  "/cubemap/air_museum_playground_env_px.jpg",
+  "/cubemap/air_museum_playground_env_nx.jpg",
+  "/cubemap/air_museum_playground_env_py.jpg",
+  "/cubemap/air_museum_playground_env_ny.jpg",
+  "/cubemap/air_museum_playground_env_pz.jpg",
+  "/cubemap/air_museum_playground_env_nz.jpg",
+];
+const loadEnvCubemapImages = async () => {
+  const loadImagePromises = envCubemapSrcs.map((src) => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.src = src;
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        resolve(img);
+      };
+      img.onerror = () => {
+        reject(new Error("Image loading failed"));
+      };
+    });
+  });
+
+  try {
+    const envCubemapImages = (await Promise.all(
+      loadImagePromises
+    )) as HTMLImageElement[];
+    envCubemap.initialise(envCubemapImages);
+    loadedResources.envCubemapImages = true;
+    updateLoadingStatus();
+  } catch (error) {
+    console.error("Error loading env cubemap images:", error);
+  }
+};
+
+// Irradiance Cubemaps
+const irradianceCubemap = new Cubemap(gl, "irradianceCubemap");
+const irradianceCubemapSrcs = [
+  "/cubemap/air_museum_playground_irradiance_px.jpg",
+  "/cubemap/air_museum_playground_irradiance_nx.jpg",
+  "/cubemap/air_museum_playground_irradiance_py.jpg",
+  "/cubemap/air_museum_playground_irradiance_ny.jpg",
+  "/cubemap/air_museum_playground_irradiance_pz.jpg",
+  "/cubemap/air_museum_playground_irradiance_nz.jpg",
+];
+const loadIrradianceCubemapImages = async () => {
+  const loadImagePromises = irradianceCubemapSrcs.map((src) => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.src = src;
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        resolve(img);
+      };
+      img.onerror = () => {
+        reject(new Error("Image loading failed"));
+      };
+    });
+  });
+
+  try {
+    const irradianceCubemapImages = (await Promise.all(
+      loadImagePromises
+    )) as HTMLImageElement[];
+    irradianceCubemap.initialise(irradianceCubemapImages);
+    loadedResources.irradianceCubemapImages = true;
+    updateLoadingStatus();
+  } catch (error) {
+    console.error("Error loading cubemap images:", error);
+  }
+};
+
+// Geometry
+const sphere = new Sphere(gl, WIDTH >= 500 ? 0.6 : 0.4);
 sphere.initialise();
+const skybox = new Skybox(gl, 1);
+skybox.initialise();
 
 const projection = mat4.create();
 mat4.perspective(projection, toRadian(45), WIDTH / HEIGHT, 0.1, 100);
@@ -180,13 +245,6 @@ function render(now: number) {
 
   deltaTime = (now - lastTime) * 0.002;
   lastTime = now;
-
-  if (!video.paused) {
-    if (modelRotateY >= 360) modelRotateY = 0;
-    else modelRotateY += deltaTime * rotateSpeed;
-  }
-
-  program.use();
 
   const model = mat4.create();
   mat4.rotateZ(model, model, toRadian(modelRotateZ));
@@ -204,29 +262,42 @@ function render(now: number) {
   vec3.transformMat4(up, viewStartUp, viewRotationMatrix);
   mat4.lookAt(view, eye, center, up);
 
-  mainWindow.gl.uniformMatrix4fv(u_model, false, model);
-  mainWindow.gl.uniformMatrix4fv(u_view, false, view);
-  mainWindow.gl.uniformMatrix4fv(u_projection, false, projection);
-  mainWindow.gl.uniform3f(u_view_position, eye[0], eye[1], eye[2]);
+  mainProgram.use();
+  gl.uniformMatrix4fv(mainModelLoc, false, model);
+  gl.uniformMatrix4fv(mainViewLoc, false, view);
+  gl.uniformMatrix4fv(mainProjectionLoc, false, projection);
+  gl.uniform3f(mainCamPosLoc, eye[0], eye[1], eye[2]);
+  gl.uniform3f(mainlightPosLoc, lightPos[0], lightPos[1], lightPos[2]);
+  heightMap.use(mainProgram.id, 0);
+  albedoMap.use(mainProgram.id, 3);
+  normalMap.use(mainProgram.id, 4);
+  metallicMap.use(mainProgram.id, 5);
+  roughnessMap.use(mainProgram.id, 6);
+  aoMap.use(mainProgram.id, 7);
+  brdfLUT.use(mainProgram.id, 8);
+  envCubemap.use(mainProgram.id, 9);
+  irradianceCubemap.use(mainProgram.id, 10);
+  sphere.draw();
 
-  if (video.readyState === video.HAVE_ENOUGH_DATA) {
-    texture.update(video);
-    sphere.draw();
-  }
-
-  skyboxProgram.use();
-  mainWindow.gl.uniformMatrix4fv(u_view_skybox, false, view);
-  mainWindow.gl.uniformMatrix4fv(u_projection_skybox, false, projection);
-  skyboxTexture.use();
+  gl.depthFunc(gl.LEQUAL);
+  backgroundProgram.use();
+  gl.uniformMatrix4fv(backgroundViewLoc, false, view);
+  gl.uniformMatrix4fv(backgroundProjectionLoc, false, projection);
+  envCubemap.use(backgroundProgram.id, 0);
   skybox.draw();
+  gl.depthFunc(gl.LESS);
 
-  mainWindow.gl.useProgram(null);
-  mainWindow.gl.bindTexture(mainWindow.gl.TEXTURE_2D, null);
+  gl.useProgram(null);
+  gl.bindTexture(gl.TEXTURE_2D, null);
+  gl.bindTexture(gl.TEXTURE_CUBE_MAP, null);
+
   window.requestAnimationFrame(render);
 }
 
 const start = async () => {
-  await loadCubemapImages();
+  await loadEnvCubemapImages();
+  await loadIrradianceCubemapImages();
+  await loadTextureImages();
   render(deltaTime);
 };
 
