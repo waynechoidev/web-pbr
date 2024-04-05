@@ -17,8 +17,6 @@ const HEIGHT = document.documentElement.clientHeight * 0.9;
 let deltaTime = 0;
 let lastTime = 0;
 
-let modelRotateY = 130;
-const modelRotateZ = -23.5;
 const lightPos = vec3.fromValues(0, 0, 2);
 
 let viewRotateX = 0;
@@ -247,8 +245,8 @@ function render(now: number) {
   lastTime = now;
 
   const model = mat4.create();
-  mat4.rotateZ(model, model, toRadian(modelRotateZ));
-  mat4.rotateY(model, model, toRadian(modelRotateY));
+  mat4.rotateZ(model, model, toRadian(0));
+  mat4.rotateY(model, model, toRadian(0));
 
   const view = mat4.create();
   const viewRotationMatrix = mat4.create();
