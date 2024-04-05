@@ -1,3 +1,3 @@
 export default {
-  // base: "https://waynechoidev.github.io/web-pbr/",
+  base: "/web-pbr/",
 };
