@@ -2,7 +2,7 @@ import Program from "./engine/program";
 import WebGLCanvas from "./engine/webgl-canvas";
 import Sphere from "./geometry/sphere";
 import Texture from "./engine/texture";
-import { vec3, mat4 } from "./external/glmatrix/index";
+import { vec2, vec3, mat4 } from "./external/glmatrix/index";
 import { toRadian } from "./external/glmatrix/common.js";
 import { main_frag } from "./shader/main_frag";
 import { main_vert } from "./shader/main_vert";
@@ -10,6 +10,7 @@ import Cubemap from "./engine/cubemap";
 import Skybox from "./geometry/skybox";
 import { background_vert } from "./shader/background_vert";
 import { background_frag } from "./shader/background_frag";
+import Camera from "./engine/camera";
 
 const WIDTH = document.documentElement.clientWidth * 0.9;
 const HEIGHT = document.documentElement.clientHeight * 0.9;
@@ -18,12 +19,6 @@ let deltaTime = 0;
 let lastTime = 0;
 
 const lightPos = vec3.fromValues(0, 0, 2);
-
-let viewRotateX = 0;
-let viewRotateY = 0;
-const viewStartEye = vec3.fromValues(0, 0, 2.5);
-const viewStartCenter = vec3.fromValues(0, 0, 1.5);
-const viewStartUp = vec3.fromValues(0, 1, 0);
 
 const mainWindow = new WebGLCanvas(WIDTH, HEIGHT);
 const gl = mainWindow.gl;
@@ -42,6 +37,12 @@ const backgroundProjectionLoc = gl.getUniformLocation(
 );
 const backgroundViewLoc = gl.getUniformLocation(backgroundProgram.id, "view");
 
+const camera = new Camera({
+  position: vec3.fromValues(0, 0, 2.5),
+  center: vec3.fromValues(0, 0, 1.5),
+  up: vec3.fromValues(0, 1, 0),
+});
+
 const loadedResources = {
   envCubemapImages: false,
   irradianceCubemapImages: false,
@@ -56,6 +57,7 @@ function updateLoadingStatus() {
     document.getElementById("loader")!.style.display = "none";
   }
 }
+
 let isDragging = false;
 let initialX: number, initialY: number;
 
@@ -90,8 +92,7 @@ document.addEventListener(moveEvent, (e) => {
     const dx = currentX - initialX;
     const dy = currentY - initialY;
 
-    viewRotateX += dy / 10;
-    viewRotateY += dx / 10;
+    camera.rotate(vec2.fromValues(dy / 10, dx / 10));
 
     initialX = currentX;
     initialY = currentY;
@@ -248,23 +249,18 @@ function render(now: number) {
   mat4.rotateZ(model, model, toRadian(0));
   mat4.rotateY(model, model, toRadian(0));
 
-  const view = mat4.create();
-  const viewRotationMatrix = mat4.create();
-  mat4.rotateY(viewRotationMatrix, viewRotationMatrix, toRadian(viewRotateY));
-  mat4.rotateX(viewRotationMatrix, viewRotationMatrix, toRadian(viewRotateX));
-  const eye = vec3.create();
-  const center = vec3.create();
-  const up = vec3.create();
-  vec3.transformMat4(eye, viewStartEye, viewRotationMatrix);
-  vec3.transformMat4(center, viewStartCenter, viewRotationMatrix);
-  vec3.transformMat4(up, viewStartUp, viewRotationMatrix);
-  mat4.lookAt(view, eye, center, up);
+  const view = camera.getViewMatrix();
 
   mainProgram.use();
   gl.uniformMatrix4fv(mainModelLoc, false, model);
   gl.uniformMatrix4fv(mainViewLoc, false, view);
   gl.uniformMatrix4fv(mainProjectionLoc, false, projection);
-  gl.uniform3f(mainCamPosLoc, eye[0], eye[1], eye[2]);
+  gl.uniform3f(
+    mainCamPosLoc,
+    camera.position[0],
+    camera.position[1],
+    camera.position[2]
+  );
   gl.uniform3f(mainlightPosLoc, lightPos[0], lightPos[1], lightPos[2]);
   heightMap.use(mainProgram.id, 0);
   albedoMap.use(mainProgram.id, 3);
