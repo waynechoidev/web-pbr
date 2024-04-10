@@ -58,53 +58,6 @@ function updateLoadingStatus() {
   }
 }
 
-let isDragging = false;
-let initialX: number, initialY: number;
-
-const isMobile =
-  /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-    navigator.userAgent
-  );
-
-const startEvent = isMobile ? "touchstart" : "mousedown";
-const moveEvent = isMobile ? "touchmove" : "mousemove";
-const endEvent = isMobile ? "touchend" : "mouseup";
-
-document.addEventListener(startEvent, (e) => {
-  isDragging = true;
-  initialX = isMobile
-    ? (e as TouchEvent).touches[0].clientX
-    : (e as MouseEvent).clientX;
-  initialY = isMobile
-    ? (e as TouchEvent).touches[0].clientY
-    : (e as MouseEvent).clientY;
-});
-
-document.addEventListener(moveEvent, (e) => {
-  if (isDragging) {
-    const currentX = isMobile
-      ? (e as TouchEvent).touches[0].clientX
-      : (e as MouseEvent).clientX;
-    const currentY = isMobile
-      ? (e as TouchEvent).touches[0].clientY
-      : (e as MouseEvent).clientY;
-
-    const dx = currentX - initialX;
-    const dy = currentY - initialY;
-
-    camera.rotate(vec2.fromValues(dy / 10, dx / 10));
-
-    initialX = currentX;
-    initialY = currentY;
-
-    e.preventDefault();
-  }
-});
-
-document.addEventListener(endEvent, () => {
-  isDragging = false;
-});
-
 // Textures
 const textureSrcs = [
   "https://waynechoidev.github.io/web-pbr/pbr/antique-grate1-height.jpg",

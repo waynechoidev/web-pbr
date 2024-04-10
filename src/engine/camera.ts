@@ -7,6 +7,11 @@ export default class Camera {
   private _up: vec3;
   private _rotate: vec2;
 
+  private _isMobile: boolean;
+  private _isDragging: boolean;
+  private _initialX: number;
+  private _initialY: number;
+
   constructor({
     position,
     center,
@@ -20,14 +25,21 @@ export default class Camera {
     this._center = center;
     this._up = up;
     this._rotate = vec2.fromValues(0, 0);
+
+    this._isDragging = false;
+    this._initialX = 0;
+    this._initialY = 0;
+
+    this._isMobile =
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent
+      );
+
+    this.initializeEvent();
   }
 
   get position() {
     return this._position;
-  }
-
-  public rotate(rotate: vec2) {
-    this._rotate = vec2.add(this._rotate, this._rotate, rotate);
   }
 
   public getViewMatrix() {
@@ -54,5 +66,50 @@ export default class Camera {
     mat4.lookAt(view, eye, center, up);
 
     return view;
+  }
+
+  private initializeEvent() {
+    const startEvent = this._isMobile ? "touchstart" : "mousedown";
+    const moveEvent = this._isMobile ? "touchmove" : "mousemove";
+    const endEvent = this._isMobile ? "touchend" : "mouseup";
+
+    document.addEventListener(startEvent, (e) => {
+      this._isDragging = true;
+      this._initialX = this._isMobile
+        ? (e as TouchEvent).touches[0].clientX
+        : (e as MouseEvent).clientX;
+      this._initialY = this._isMobile
+        ? (e as TouchEvent).touches[0].clientY
+        : (e as MouseEvent).clientY;
+    });
+
+    document.addEventListener(moveEvent, (e) => {
+      if (this._isDragging) {
+        const currentX = this._isMobile
+          ? (e as TouchEvent).touches[0].clientX
+          : (e as MouseEvent).clientX;
+        const currentY = this._isMobile
+          ? (e as TouchEvent).touches[0].clientY
+          : (e as MouseEvent).clientY;
+
+        const dx = currentX - this._initialX;
+        const dy = currentY - this._initialY;
+
+        this._rotate = vec2.add(
+          this._rotate,
+          this._rotate,
+          vec2.fromValues(dy / 10, dx / 10)
+        );
+
+        this._initialX = currentX;
+        this._initialY = currentY;
+
+        e.preventDefault();
+      }
+    });
+
+    document.addEventListener(endEvent, () => {
+      this._isDragging = false;
+    });
   }
 }
